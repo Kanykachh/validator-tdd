@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: validator.test.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: validator.test.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const {
+    validateAge,
+    validatePostalCode,
+    validateIdentity,
+    validateEmail
+} = require('./validator');
+
+/**
+ * @module validator.test
+ * @description Tests unitaires pour le module validator.js
+ */
+
+// ============================================
+// Tests pour validateAge
+// ============================================
+describe('validateAge', () => {
+    let testStartTime;
+
+    beforeAll(() => {
+        testStartTime = Date.now();
+        console.log('🧪 Début des tests validateAge');
+    });
+
+    afterAll(() => {
+        console.log(`✅ Tests validateAge terminés (${Date.now() - testStartTime}ms)`);
+    });
+
+    describe('Cas valides - Personnes majeures', () => {
+        it('should return valid for a person exactly 18 years old', () => {
+            const today = new Date();
+            const birthDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+            const result = validateAge(birthDate);
+            expect(result.valid).toBe(true);
+            expect(result.age).toBe(18);
+        });
+
+        it('should return valid for a person over 18', () => {
+            const birthDate = new Date('1990-05-15');
+            const result = validateAge(birthDate);
+            expect(result.valid).toBe(true);
+            expect(result.age).toBeGreaterThan(18);
+        });
+
+        it('should return valid for an elderly person (100 years old)', () => {
+            const today = new Date();
+            const birthDate = new Date(today.getFullYear() - 100, 0, 1);
+            const result = validateAge(birthDate);
+            expect(result.valid).toBe(true);
+            expect(result.age).toBeGreaterThanOrEqual(100);
+        });
+    });
+
+    describe('Cas invalides - Personnes mineures', () => {
+        it('should return error for a person under 18', () => {
+            const today = new Date();
+            const birthDate = new Date(today.getFullYear() - 17, today.getMonth(), today.getDate());
+            const result = validateAge(birthDate);
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('AGE_UNDER_18');
+            expect(result.error.message).toContain('18');
+        });
+
+        it('should return error for a newborn', () => {
+            const birthDate = new Date();
+            const result = validateAge(birthDate);
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('AGE_UNDER_18');
+        });
+
+        it('should return error for a person who will be 18 tomorrow', () => {
+            const today = new Date();
+            const birthDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate() + 1);
+            const result = validateAge(birthDate);
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('AGE_UNDER_18');
+        });
+    });
+
+    describe('Edge cases - 29 février (année bissextile)', () => {
+        it('should handle birth on February 29th correctly', () => {
+            // Personne née le 29 février 2000 (année bissextile)
+            const birthDate = new Date('2000-02-29');
+            const result = validateAge(birthDate);
+            expect(result.valid).toBe(true);
+            expect(result.age).toBeGreaterThanOrEqual(25);
+        });
+
+        it('should calculate age correctly for leap year birthday', () => {
+            // Né le 29 février 2004
+            const birthDate = new Date('2004-02-29');
+            const result = validateAge(birthDate);
+            expect(result.valid).toBe(true);
+        });
+    });
+
+    describe('Edge cases - Entrées invalides', () => {
+        it('should throw error when no argument is provided', () => {
+            expect(() => validateAge()).toThrow();
+        });
+
+        it('should throw error when argument is null', () => {
+            expect(() => validateAge(null)).toThrow('INVALID_DATE');
+        });
+
+        it('should throw error when argument is undefined', () => {
+            expect(() => validateAge(undefined)).toThrow('INVALID_DATE');
+        });
+
+        it('should throw error when argument is not a Date', () => {
+            expect(() => validateAge('1990-01-01')).toThrow('INVALID_DATE');
+            expect(() => validateAge(123456)).toThrow('INVALID_DATE');
+            expect(() => validateAge({})).toThrow('INVALID_DATE');
+        });
+
+        it('should throw error when Date is invalid', () => {
+            expect(() => validateAge(new Date('invalid'))).toThrow('INVALID_DATE');
+        });
+
+        it('should throw error for future birth date', () => {
+            const futureDate = new Date();
+            futureDate.setFullYear(futureDate.getFullYear() + 1);
+            expect(() => validateAge(futureDate)).toThrow('FUTURE_DATE');
+        });
+    });
+});
+
+// ============================================
+// Tests pour validatePostalCode
+// ============================================
+describe('validatePostalCode', () => {
+    describe('Cas valides - Codes postaux français', () => {
+        it('should return valid for Paris (75001)', () => {
+            const result = validatePostalCode('75001');
+            expect(result.valid).toBe(true);
+            expect(result.postalCode).toBe('75001');
+        });
+
+        it('should return valid for Marseille (13001)', () => {
+            const result = validatePostalCode('13001');
+            expect(result.valid).toBe(true);
+        });
+
+        it('should return valid for code starting with 0 (01000)', () => {
+            const result = validatePostalCode('01000');
+            expect(result.valid).toBe(true);
+        });
+
+        it('should return valid for DOM-TOM (97400)', () => {
+            const result = validatePostalCode('97400');
+            expect(result.valid).toBe(true);
+        });
+
+        it('should return valid for Corse (20000)', () => {
+            const result = validatePostalCode('20000');
+            expect(result.valid).toBe(true);
+        });
+    });
+
+    describe('Cas invalides - Format incorrect', () => {
+        it('should return error for code with less than 5 digits', () => {
+            const result = validatePostalCode('7500');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_FORMAT');
+        });
+
+        it('should return error for code with more than 5 digits', () => {
+            const result = validatePostalCode('750001');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_FORMAT');
+        });
+
+        it('should return error for code with letters', () => {
+            const result = validatePostalCode('7500A');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_FORMAT');
+        });
+
+        it('should return error for code with special characters', () => {
+            const result = validatePostalCode('75-001');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_FORMAT');
+        });
+
+        it('should return error for code with spaces', () => {
+            const result = validatePostalCode('75 001');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_FORMAT');
+        });
+    });
+
+    describe('Edge cases - Entrées invalides', () => {
+        it('should throw error when no argument is provided', () => {
+            expect(() => validatePostalCode()).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when argument is null', () => {
+            expect(() => validatePostalCode(null)).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when argument is undefined', () => {
+            expect(() => validatePostalCode(undefined)).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when argument is a number', () => {
+            expect(() => validatePostalCode(75001)).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error for empty string', () => {
+            expect(() => validatePostalCode('')).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error for object', () => {
+            expect(() => validatePostalCode({})).toThrow('INVALID_INPUT');
+        });
+    });
+});
+
+// ============================================
+// Tests pour validateIdentity
+// ============================================
+describe('validateIdentity', () => {
+    describe('Cas valides - Noms et prénoms corrects', () => {
+        it('should return valid for simple name', () => {
+            const result = validateIdentity('Jean', 'Dupont');
+            expect(result.valid).toBe(true);
+            expect(result.firstName).toBe('Jean');
+            expect(result.lastName).toBe('Dupont');
+        });
+
+        it('should return valid for name with accent', () => {
+            const result = validateIdentity('Hélène', 'Müller');
+            expect(result.valid).toBe(true);
+        });
+
+        it('should return valid for compound name with hyphen', () => {
+            const result = validateIdentity('Jean-Pierre', 'Martin-Dupont');
+            expect(result.valid).toBe(true);
+        });
+
+        it('should return valid for name with apostrophe', () => {
+            const result = validateIdentity("Patrick", "O'Brien");
+            expect(result.valid).toBe(true);
+        });
+
+        it('should return valid for name with spaces', () => {
+            const result = validateIdentity('Marie Anne', 'De La Fontaine');
+            expect(result.valid).toBe(true);
+        });
+
+        it('should return valid for accented characters (éèêëàâäùûüôöîïç)', () => {
+            const result = validateIdentity('Bérénice', 'Çağlar');
+            expect(result.valid).toBe(true);
+        });
+    });
+
+    describe('Cas invalides - Caractères interdits', () => {
+        it('should return error for name with numbers', () => {
+            const result = validateIdentity('Jean123', 'Dupont');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_CHARACTERS');
+        });
+
+        it('should return error for name with special characters', () => {
+            const result = validateIdentity('Jean@', 'Dupont');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_CHARACTERS');
+        });
+
+        it('should return error for lastName with numbers', () => {
+            const result = validateIdentity('Jean', 'Dupont123');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_CHARACTERS');
+        });
+    });
+
+    describe('Edge cases - Protection XSS', () => {
+        it('should return error for script tag injection', () => {
+            const result = validateIdentity('&lt;script>alert("xss")&lt;/script>', 'Dupont');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('XSS_DETECTED');
+        });
+
+        it('should return error for HTML tag in lastName', () => {
+            const result = validateIdentity('Jean', '&lt;img src=x onerror=alert(1)>');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('XSS_DETECTED');
+        });
+
+        it('should return error for onclick attribute', () => {
+            const result = validateIdentity('Jean onclick=alert(1)', 'Dupont');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('XSS_DETECTED');
+        });
+
+        it('should return error for javascript: protocol', () => {
+            const result = validateIdentity('javascript:alert(1)', 'Dupont');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('XSS_DETECTED');
+        });
+
+        it('should return error for encoded script tag', () => {
+            const result = validateIdentity('Jean', '%3Cscript%3E');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('XSS_DETECTED');
+        });
+    });
+
+    describe('Edge cases - Entrées invalides', () => {
+        it('should throw error when no arguments provided', () => {
+            expect(() => validateIdentity()).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when firstName is null', () => {
+            expect(() => validateIdentity(null, 'Dupont')).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when lastName is null', () => {
+            expect(() => validateIdentity('Jean', null)).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when firstName is empty', () => {
+            expect(() => validateIdentity('', 'Dupont')).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when lastName is empty', () => {
+            expect(() => validateIdentity('Jean', '')).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when arguments are numbers', () => {
+            expect(() => validateIdentity(123, 456)).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error for object arguments', () => {
+            expect(() => validateIdentity({}, {})).toThrow('INVALID_INPUT');
+        });
+    });
+});
+
+// ============================================
+// Tests pour validateEmail
+// ============================================
+describe('validateEmail', () => {
+    describe('Cas valides - Emails corrects', () => {
+        it('should return valid for standard email', () => {
+            const result = validateEmail('user@example.com');
+            expect(result.valid).toBe(true);
+            expect(result.email).toBe('user@example.com');
+        });
+
+        it('should return valid for email with subdomain', () => {
+            const result = validateEmail('user@mail.example.com');
+            expect(result.valid).toBe(true);
+        });
+
+        it('should return valid for email with dots in local part', () => {
+            const result = validateEmail('john.doe@example.com');
+            expect(result.valid).toBe(true);
+        });
+
+        it('should return valid for email with plus sign', () => {
+            const result = validateEmail('user+tag@example.com');
+            expect(result.valid).toBe(true);
+        });
+
+        it('should return valid for email with numbers', () => {
+            const result = validateEmail('user123@example123.com');
+            expect(result.valid).toBe(true);
+        });
+
+        it('should return valid for email with hyphen in domain', () => {
+            const result = validateEmail('user@my-company.com');
+            expect(result.valid).toBe(true);
+        });
+
+        it('should return valid for various TLDs', () => {
+            expect(validateEmail('user@example.fr').valid).toBe(true);
+            expect(validateEmail('user@example.co.uk').valid).toBe(true);
+            expect(validateEmail('user@example.io').valid).toBe(true);
+        });
+    });
+
+    describe('Cas invalides - Emails incorrects', () => {
+        it('should return error for email without @', () => {
+            const result = validateEmail('userexample.com');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_FORMAT');
+        });
+
+        it('should return error for email without domain', () => {
+            const result = validateEmail('user@');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_FORMAT');
+        });
+
+        it('should return error for email without local part', () => {
+            const result = validateEmail('@example.com');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_FORMAT');
+        });
+
+        it('should return error for email without TLD', () => {
+            const result = validateEmail('user@example');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_FORMAT');
+        });
+
+        it('should return error for email with spaces', () => {
+            const result = validateEmail('user @example.com');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_FORMAT');
+        });
+
+        it('should return error for email with multiple @', () => {
+            const result = validateEmail('user@@example.com');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_FORMAT');
+        });
+
+        it('should return error for email with invalid characters', () => {
+            const result = validateEmail('user&lt;script>@example.com');
+            expect(result.valid).toBe(false);
+            expect(result.error.code).toBe('INVALID_FORMAT');
+        });
+    });
+
+    describe('Edge cases - Entrées invalides', () => {
+        it('should throw error when no argument is provided', () => {
+            expect(() => validateEmail()).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when argument is null', () => {
+            expect(() => validateEmail(null)).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when argument is undefined', () => {
+            expect(() => validateEmail(undefined)).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when argument is empty string', () => {
+            expect(() => validateEmail('')).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when argument is a number', () => {
+            expect(() => validateEmail(12345)).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when argument is an object', () => {
+            expect(() => validateEmail({})).toThrow('INVALID_INPUT');
+        });
+
+        it('should throw error when argument is an array', () => {
+            expect(() => validateEmail([])).toThrow('INVALID_INPUT');
+        });
+    });
+});
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-validator.html">validator</a></li><li><a href="validator.module_test.html">test</a></li></ul><h3>Global</h3><ul><li><a href="global.html#calculateAge">calculateAge</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Feb 06 2026 15:47:09 GMT+0100 (Central European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

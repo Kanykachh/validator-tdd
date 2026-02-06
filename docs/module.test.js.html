@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: module.test.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: module.test.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const { calculateAge } = require('./module');
+
+/**
+ * @function calculateAge
+ */
+describe('calculateAge Unit Test Suites', () => {
+    // Variables partagées pour les tests
+    let testPerson;
+    let testStartTime;
+
+    // beforeAll - Exécuté une seule fois au début de la suite de tests
+    beforeAll(() => {
+        console.log('🚀 Début de la suite de tests calculateAge');
+        testStartTime = Date.now();
+    });
+
+    // afterAll - Exécuté une seule fois à la fin de la suite de tests
+    afterAll(() => {
+        const duration = Date.now() - testStartTime;
+        console.log(`✅ Fin de la suite de tests (durée: ${duration}ms)`);
+    });
+
+    // beforeEach - Exécuté avant chaque test
+    beforeEach(() => {
+        // Réinitialiser testPerson avant chaque test
+        testPerson = {
+            birth: new Date("11/07/1991")
+        };
+    });
+
+    // afterEach - Exécuté après chaque test
+    afterEach(() => {
+        // Nettoyage après chaque test
+        testPerson = null;
+    });
+
+    // Tests valides
+    describe('Valid cases', () => {
+        it('should return a correct age', () => {
+            expect(calculateAge(testPerson)).toEqual(34);
+        });
+
+        it('should return 0 for a person born this year', () => {
+            testPerson.birth = new Date("01/01/2026");
+            expect(calculateAge(testPerson)).toEqual(0);
+        });
+
+        it('should return a positive number', () => {
+            testPerson.birth = new Date("05/15/1990");
+            expect(calculateAge(testPerson)).toBeGreaterThanOrEqual(0);
+            expect(typeof calculateAge(testPerson)).toBe('number');
+        });
+    });
+
+    // Tests des effets de bord (edge cases)
+    describe('Edge cases - Error handling', () => {
+        it('should throw an error when no argument is provided', () => {
+            expect(() => calculateAge()).toThrow('Argument is required');
+        });
+
+        it('should throw an error when argument is null', () => {
+            expect(() => calculateAge(null)).toThrow('Argument is required');
+        });
+
+        it('should throw an error when argument is not an object', () => {
+            expect(() => calculateAge("not an object")).toThrow('Argument must be an object');
+            expect(() => calculateAge(123)).toThrow('Argument must be an object');
+            expect(() => calculateAge(true)).toThrow('Argument must be an object');
+        });
+
+        it('should throw an error when object has no birth property', () => {
+            expect(() => calculateAge({})).toThrow('Object must have a birth property');
+            expect(() => calculateAge({ name: 'John' })).toThrow('Object must have a birth property');
+        });
+
+        it('should throw an error when birth is not a Date', () => {
+            expect(() => calculateAge({ birth: "11/07/1991" })).toThrow('Birth must be a Date object');
+            expect(() => calculateAge({ birth: 1991 })).toThrow('Birth must be a Date object');
+        });
+
+        it('should throw an error when birth date is invalid', () => {
+            expect(() => calculateAge({ birth: new Date("invalid") })).toThrow('Birth date is invalid');
+        });
+    });
+
+    // Test pour l'année prochaine (date dynamique)
+    describe('Future-proof tests', () => {
+        it('should calculate age correctly regardless of current year', () => {
+            const currentYear = new Date().getFullYear();
+            const birthYear = currentYear - 30;
+            testPerson.birth = new Date(`01/01/${birthYear}`);
+            const age = calculateAge(testPerson);
+            expect(age).toBeGreaterThanOrEqual(29);
+            expect(age).toBeLessThanOrEqual(30);
+        });
+
+        it('should work with Date.now() for dynamic age calculation', () => {
+            const now = new Date();
+            testPerson.birth = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate());
+            expect(calculateAge(testPerson)).toEqual(10);
+        });
+    });
+});
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-validator.html">validator</a></li><li><a href="validator.module_test.html">test</a></li></ul><h3>Global</h3><ul><li><a href="global.html#calculateAge">calculateAge</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Feb 06 2026 15:47:09 GMT+0100 (Central European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
