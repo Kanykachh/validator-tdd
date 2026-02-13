@@ -226,9 +226,56 @@ function validateEmail(email) {
     };
 }
 
+/**
+ * Valide toutes les données d'un utilisateur d'un coup
+ * Utilise les autres fonctions de validation et renvoie true/false
+ *
+ * @param {Object} user - les infos de l'utilisateur
+ * @returns {boolean} true si tout est valide, false sinon
+ */
+function validateUser(user) {
+    // on verifie que c'est bien un objet
+    if (!user || typeof user !== 'object') {
+        return false;
+    }
+
+    // on essaye chaque validation, si ca throw ou si c'est pas valid => false
+    try {
+        const age = validateAge(user.birthDate);
+        if (!age.valid) return false;
+    } catch (err) {
+        return false;
+    }
+
+    try {
+        const postal = validatePostalCode(user.postalCode);
+        if (!postal.valid) return false;
+    } catch (err) {
+        return false;
+    }
+
+    try {
+        const identity = validateIdentity(user.firstName, user.lastName);
+        if (!identity.valid) return false;
+    } catch (err) {
+        return false;
+    }
+
+    try {
+        const email = validateEmail(user.email);
+        if (!email.valid) return false;
+    } catch (err) {
+        return false;
+    }
+
+    // si on arrive la c'est que tout est bon
+    return true;
+}
+
 module.exports = {
     validateAge,
     validatePostalCode,
     validateIdentity,
-    validateEmail
+    validateEmail,
+    validateUser
 };
