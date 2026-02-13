@@ -1,70 +1,51 @@
-# Getting Started with Create React App
+# My-App - Formulaire d'inscription React
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Description
 
-## Available Scripts
+Application React qui permet a un utilisateur de s'inscrire via un formulaire.
+Les champs du formulaire sont : nom, prenom, email, date de naissance, ville et code postal.
 
-In the project directory, you can run:
+Les données sont validées avant d'etre sauvegardées dans le localStorage du navigateur.
 
-### `npm start`
+## Regles de validation
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Age** : l'utilisateur doit avoir au moins 18 ans
+- **Code postal** : doit etre un code postal français (5 chiffres)
+- **Nom / Prenom** : pas de chiffres ni de caracteres speciaux, protection contre le XSS
+- **Email** : doit etre un email valide (format standard)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Les fonctions de validation sont dans un fichier `src/validator.js` séparé.
 
-### `npm test`
+## Lancer le projet
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+cd my-app
+npm install
+npm start
+```
 
-### `npm run build`
+L'app se lance sur http://localhost:3000
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Lancer les tests
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+npm test
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Les tests incluent :
+- Tests unitaires des fonctions de validation (validator.test.js)
+- Tests d'integration du composant React (App.test.js)
 
-### `npm run eject`
+## Coverage
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```bash
+npm test -- --coverage
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Le coverage attendu est de 100% sur les fichiers testés (index.js et reportWebVitals.js sont exclus).
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Technologies
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- React 19
+- React Testing Library
+- Jest
