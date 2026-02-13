@@ -7,6 +7,9 @@
     "test": "jest --coverage",
     "jsdoc": "jsdoc -c ./jsdoc.config.json -r -d ./docs"
   },
+  "jest": {
+    "testPathIgnorePatterns": ["/node_modules/", "/my-app/"]
+  },
   "devDependencies": {
     "@babel/preset-env": "^7.29.0",
     "babel-jest": "^30.2.0",
