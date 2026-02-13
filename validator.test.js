@@ -2,7 +2,8 @@ const {
     validateAge,
     validatePostalCode,
     validateIdentity,
-    validateEmail
+    validateEmail,
+    validateUser
 } = require('./validator');
 
 /**
@@ -413,5 +414,198 @@ describe('validateEmail', () => {
         it('doit lever une erreur si tableau', () => {
             expect(() => validateEmail([])).toThrow('INVALID_INPUT');
         });
+    });
+});
+
+// tests pour la fonction validateUser qui combine tout
+describe('validateUser', () => {
+
+    it('retourne true quand toutes les infos sont bonnes', () => {
+        const res = validateUser({
+            birthDate: new Date('1998-03-22'),
+            postalCode: '75015',
+            firstName: 'Kany',
+            lastName: 'Chheng',
+            email: 'kany.chheng@gmail.com'
+        });
+        expect(res).toBe(true);
+    });
+
+    it('retourne true pour quelquun de 18 ans pile', () => {
+        const today = new Date();
+        const res = validateUser({
+            birthDate: new Date(today.getFullYear() - 18, today.getMonth(), today.getDate()),
+            postalCode: '69001',
+            firstName: 'Marie',
+            lastName: 'Martin',
+            email: 'marie@test.fr'
+        });
+        expect(res).toBe(true);
+    });
+
+    it('retourne true avec nom composé', () => {
+        const res = validateUser({
+            birthDate: new Date('1985-12-01'),
+            postalCode: '97400',
+            firstName: 'Jean-Pierre',
+            lastName: "O'Brien",
+            email: 'jp.obrien@mail.co.uk'
+        });
+        expect(res).toBe(true);
+    });
+
+    // test si l'age bloque bien
+    it('retourne false si mineur', () => {
+        const today = new Date();
+        const res = validateUser({
+            birthDate: new Date(today.getFullYear() - 10, 0, 1),
+            postalCode: '75001',
+            firstName: 'Lucas',
+            lastName: 'Petit',
+            email: 'lucas@example.com'
+        });
+        expect(res).toBe(false);
+    });
+
+    it('retourne false avec date future', () => {
+        const future = new Date();
+        future.setFullYear(future.getFullYear() + 1);
+        const res = validateUser({
+            birthDate: future,
+            postalCode: '75001',
+            firstName: 'Jean',
+            lastName: 'Dupont',
+            email: 'jean@example.com'
+        });
+        expect(res).toBe(false);
+    });
+
+    it('retourne false avec une date invalide', () => {
+        const res = validateUser({
+            birthDate: new Date('nimportequoi'),
+            postalCode: '75001',
+            firstName: 'Jean',
+            lastName: 'Dupont',
+            email: 'jean@test.com'
+        });
+        expect(res).toBe(false);
+    });
+
+    // test code postal
+    it('retourne false si code postal trop court', () => {
+        const res = validateUser({
+            birthDate: new Date('1995-06-10'),
+            postalCode: '7500',
+            firstName: 'Jean',
+            lastName: 'Dupont',
+            email: 'jean@example.com'
+        });
+        expect(res).toBe(false);
+    });
+
+    it('retourne false si code postal avec lettres', () => {
+        const res = validateUser({
+            birthDate: new Date('1995-06-10'),
+            postalCode: '7500A',
+            firstName: 'Jean',
+            lastName: 'Dupont',
+            email: 'jean@example.com'
+        });
+        expect(res).toBe(false);
+    });
+
+    // test identité
+    it('retourne false si prenom avec chiffres', () => {
+        const res = validateUser({
+            birthDate: new Date('1995-06-10'),
+            postalCode: '75001',
+            firstName: 'Jean123',
+            lastName: 'Dupont',
+            email: 'jean@example.com'
+        });
+        expect(res).toBe(false);
+    });
+
+    it('retourne false si xss dans le nom', () => {
+        const res = validateUser({
+            birthDate: new Date('1995-06-10'),
+            postalCode: '75001',
+            firstName: 'Jean',
+            lastName: '<script>alert("xss")</script>',
+            email: 'jean@example.com'
+        });
+        expect(res).toBe(false);
+    });
+
+    // test email
+    it('retourne false si email sans @', () => {
+        const res = validateUser({
+            birthDate: new Date('1995-06-10'),
+            postalCode: '75001',
+            firstName: 'Jean',
+            lastName: 'Dupont',
+            email: 'jeanexample.com'
+        });
+        expect(res).toBe(false);
+    });
+
+    it('retourne false si email incomplet', () => {
+        const res = validateUser({
+            birthDate: new Date('1995-06-10'),
+            postalCode: '75001',
+            firstName: 'Jean',
+            lastName: 'Dupont',
+            email: 'jean@'
+        });
+        expect(res).toBe(false);
+    });
+
+    // test quand tout est faux en meme temps
+    it('retourne false si tout est invalide', () => {
+        const res = validateUser({
+            birthDate: new Date('blabla'),
+            postalCode: 'ABC',
+            firstName: '123',
+            lastName: '<script>',
+            email: 'pasunmail'
+        });
+        expect(res).toBe(false);
+    });
+
+    // test des cas limites
+    it('retourne false si objet vide', () => {
+        expect(validateUser({})).toBe(false);
+    });
+
+    it('retourne false si null', () => {
+        expect(validateUser(null)).toBe(false);
+    });
+
+    it('retourne false si undefined', () => {
+        expect(validateUser(undefined)).toBe(false);
+    });
+
+    it('retourne false si pas d argument', () => {
+        expect(validateUser()).toBe(false);
+    });
+
+    it('retourne false si il manque le mail', () => {
+        const res = validateUser({
+            birthDate: new Date('1995-06-10'),
+            postalCode: '75001',
+            firstName: 'Jean',
+            lastName: 'Dupont'
+        });
+        expect(res).toBe(false);
+    });
+
+    it('retourne false si il manque le code postal', () => {
+        const res = validateUser({
+            birthDate: new Date('1995-06-10'),
+            firstName: 'Jean',
+            lastName: 'Dupont',
+            email: 'jean@example.com'
+        });
+        expect(res).toBe(false);
     });
 });
