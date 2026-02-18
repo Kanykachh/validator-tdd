@@ -5,7 +5,7 @@
   "main": "validator.js",
   "scripts": {
     "test": "jest --coverage",
-    "jsdoc": "jsdoc -c ./jsdoc.config.json -r -d ./docs"
+    "jsdoc": "jsdoc -R ./README.md -c ./jsdoc.config.json -r -d ./docs"
   },
   "jest": {
     "testPathIgnorePatterns": ["/node_modules/", "/my-app/"]

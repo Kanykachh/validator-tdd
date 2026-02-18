@@ -8,13 +8,74 @@ jobs:
   build_test:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
 
-      - uses: actions/setup-node@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
         with:
-          node-version: '20'
+          node-version: ${{ matrix.node-version }}
 
+      # Tests unitaires du module validator
       - run: npm install
-
       - run: npm test
+
+      # Tests d'intégration de l'application React
+      - run: npm install
+        working-directory: ./my-app
+      - run: npm test
+        working-directory: ./my-app
+
+      - name: upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build_test
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v2
+        with:
+          node-version: 20
+
+      # Generation de la documentation JSDoc
+      - run: npm install
+      - run: npm run jsdoc
+
+      # Build de l'application React
+      - run: npm install
+        working-directory: ./my-app
+      - run: npm run build
+        working-directory: ./my-app
+
+      # Copier la documentation dans le build pour qu'elle soit accessible via /documentation
+      - run: cp -r ./docs ./my-app/build/documentation
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./my-app/build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
