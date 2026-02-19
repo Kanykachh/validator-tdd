@@ -1,13 +1,22 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { UserProvider } from './UserContext';
 import App from './App';
 
-// on vide le localStorage avant chaque test
+function renderApp() {
+  return render(
+    <MemoryRouter>
+      <UserProvider>
+        <App />
+      </UserProvider>
+    </MemoryRouter>
+  );
+}
+
 beforeEach(() => {
   localStorage.clear();
 });
 
-// fonction pour remplir le formulaire avec des bonnes donnees
-// ca evite de copier coller partout
 function remplirFormulaire() {
   fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Kany', name: 'firstName' } });
   fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Chheng', name: 'lastName' } });
@@ -18,7 +27,7 @@ function remplirFormulaire() {
 }
 
 test('affiche le formulaire avec tous les champs', () => {
-  render(<App />);
+  renderApp();
 
   expect(screen.getByLabelText('Prénom')).toBeInTheDocument();
   expect(screen.getByLabelText('Nom')).toBeInTheDocument();
@@ -30,15 +39,14 @@ test('affiche le formulaire avec tous les champs', () => {
 });
 
 test('le bouton est disabled quand le formulaire est vide', () => {
-  render(<App />);
+  renderApp();
 
   const button = screen.getByRole('button', { name: "S'inscrire" });
   expect(button).toBeDisabled();
 });
 
 test('le bouton devient actif quand tout est rempli correctement', () => {
-  render(<App />);
-
+  renderApp();
   remplirFormulaire();
 
   const button = screen.getByRole('button', { name: "S'inscrire" });
@@ -46,19 +54,16 @@ test('le bouton devient actif quand tout est rempli correctement', () => {
 });
 
 test('le bouton reste disabled si un champ est invalide', () => {
-  render(<App />);
-
+  renderApp();
   remplirFormulaire();
-  // on met un code postal invalide
   fireEvent.change(screen.getByLabelText('Code postal'), { target: { value: '123', name: 'postalCode' } });
 
   const button = screen.getByRole('button', { name: "S'inscrire" });
   expect(button).toBeDisabled();
 });
 
-// test du feedback immediat au blur
 test('affiche une erreur au blur si le champ est vide', () => {
-  render(<App />);
+  renderApp();
 
   const prenomInput = screen.getByLabelText('Prénom');
   fireEvent.focus(prenomInput);
@@ -68,7 +73,7 @@ test('affiche une erreur au blur si le champ est vide', () => {
 });
 
 test('affiche une erreur au blur si email invalide', () => {
-  render(<App />);
+  renderApp();
 
   const emailInput = screen.getByLabelText('Email');
   fireEvent.change(emailInput, { target: { value: 'pasunmail', name: 'email' } });
@@ -78,7 +83,7 @@ test('affiche une erreur au blur si email invalide', () => {
 });
 
 test('affiche erreur au blur si mineur', () => {
-  render(<App />);
+  renderApp();
 
   const dateInput = screen.getByLabelText('Date de naissance');
   fireEvent.change(dateInput, { target: { value: '2015-01-01', name: 'birthDate' } });
@@ -88,7 +93,7 @@ test('affiche erreur au blur si mineur', () => {
 });
 
 test('affiche erreur au blur si code postal invalide', () => {
-  render(<App />);
+  renderApp();
 
   const cpInput = screen.getByLabelText('Code postal');
   fireEvent.change(cpInput, { target: { value: '123', name: 'postalCode' } });
@@ -98,7 +103,7 @@ test('affiche erreur au blur si code postal invalide', () => {
 });
 
 test('affiche erreur au blur si ville invalide', () => {
-  render(<App />);
+  renderApp();
 
   const villeInput = screen.getByLabelText('Ville');
   fireEvent.change(villeInput, { target: { value: '123', name: 'city' } });
@@ -107,9 +112,8 @@ test('affiche erreur au blur si ville invalide', () => {
   expect(screen.getByText('Nom de ville invalide')).toBeInTheDocument();
 });
 
-// les erreurs sont en rouge
 test('les erreurs sont affichees avec la classe error (rouge)', () => {
-  render(<App />);
+  renderApp();
 
   const prenomInput = screen.getByLabelText('Prénom');
   fireEvent.focus(prenomInput);
@@ -119,11 +123,9 @@ test('les erreurs sont affichees avec la classe error (rouge)', () => {
   expect(errorDiv).toHaveClass('error');
 });
 
-// test du formulaire vide soumis (bouton disabled donc on force)
 test('affiche les erreurs si on essaye de soumettre avec des champs invalides', () => {
-  render(<App />);
+  renderApp();
 
-  // on remplit avec des trucs invalides
   fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Jean', name: 'firstName' } });
   fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Dupont', name: 'lastName' } });
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'jean@test.com', name: 'email' } });
@@ -131,28 +133,22 @@ test('affiche les erreurs si on essaye de soumettre avec des champs invalides', 
   fireEvent.change(screen.getByLabelText('Ville'), { target: { value: 'Paris', name: 'city' } });
   fireEvent.change(screen.getByLabelText('Code postal'), { target: { value: '75001', name: 'postalCode' } });
 
-  // le bouton est disabled car mineur, mais on teste le submit quand meme
-  // en soumettant le form directement
   fireEvent.submit(screen.getByRole('button', { name: "S'inscrire" }));
 
   expect(screen.getByText('Vous devez avoir au moins 18 ans')).toBeInTheDocument();
   expect(screen.queryByText('Inscription enregistrée !')).not.toBeInTheDocument();
 });
 
-// inscription qui marche
 test('inscription reussie: toaster + localStorage + champs vides', () => {
-  render(<App />);
-
+  renderApp();
   remplirFormulaire();
 
   fireEvent.click(screen.getByRole('button', { name: "S'inscrire" }));
 
-  // toaster de succes
   const toaster = screen.getByRole('alert');
   expect(toaster).toHaveTextContent('Inscription enregistrée !');
   expect(toaster).toHaveClass('success');
 
-  // localStorage rempli
   const saved = JSON.parse(localStorage.getItem('userData'));
   expect(saved.firstName).toBe('Kany');
   expect(saved.lastName).toBe('Chheng');
@@ -160,72 +156,60 @@ test('inscription reussie: toaster + localStorage + champs vides', () => {
   expect(saved.postalCode).toBe('75015');
   expect(saved.city).toBe('Paris');
 
-  // les champs sont vides apres la soumission
   expect(screen.getByLabelText('Prénom').value).toBe('');
   expect(screen.getByLabelText('Nom').value).toBe('');
   expect(screen.getByLabelText('Email').value).toBe('');
 });
 
-// simulation d'un utilisateur chaotique
 test('utilisateur chaotique: saisies invalides, corrections, re-saisies', () => {
-  render(<App />);
+  renderApp();
 
-  // l'user tape n'importe quoi dans le prenom
   const prenomInput = screen.getByLabelText('Prénom');
   fireEvent.change(prenomInput, { target: { value: '123', name: 'firstName' } });
   fireEvent.blur(prenomInput);
   expect(screen.getByText('Le nom ne doit contenir que des lettres')).toBeInTheDocument();
 
-  // il corrige
   fireEvent.change(prenomInput, { target: { value: 'Jean', name: 'firstName' } });
   expect(screen.queryByText('Le nom ne doit contenir que des lettres')).not.toBeInTheDocument();
 
-  // il tape un mauvais email
   const emailInput = screen.getByLabelText('Email');
   fireEvent.change(emailInput, { target: { value: 'pasbien', name: 'email' } });
   fireEvent.blur(emailInput);
   expect(screen.getByText("L'email n'est pas valide")).toBeInTheDocument();
 
-  // il corrige l'email
   fireEvent.change(emailInput, { target: { value: 'jean@test.com', name: 'email' } });
   expect(screen.queryByText("L'email n'est pas valide")).not.toBeInTheDocument();
 
-  // il remplit le reste correctement
   fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Dupont', name: 'lastName' } });
   fireEvent.change(screen.getByLabelText('Date de naissance'), { target: { value: '1998-05-10', name: 'birthDate' } });
   fireEvent.change(screen.getByLabelText('Ville'), { target: { value: 'Lyon', name: 'city' } });
   fireEvent.change(screen.getByLabelText('Code postal'), { target: { value: '69001', name: 'postalCode' } });
 
-  // maintenant le bouton devrait marcher
   const button = screen.getByRole('button', { name: "S'inscrire" });
   expect(button).not.toBeDisabled();
 
   fireEvent.click(button);
   expect(screen.getByText('Inscription enregistrée !')).toBeInTheDocument();
 
-  // on verifie le localStorage
   const saved = JSON.parse(localStorage.getItem('userData'));
   expect(saved.firstName).toBe('Jean');
   expect(saved.city).toBe('Lyon');
 });
 
 test('le toaster disparait si on modifie un champ apres', () => {
-  render(<App />);
-
+  renderApp();
   remplirFormulaire();
 
   fireEvent.click(screen.getByRole('button', { name: "S'inscrire" }));
   expect(screen.getByText('Inscription enregistrée !')).toBeInTheDocument();
 
-  // on modifie un champ apres
   fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Marie', name: 'firstName' } });
 
   expect(screen.queryByText('Inscription enregistrée !')).not.toBeInTheDocument();
 });
 
-// test blur avec une valeur correcte (pas d'erreur affichée)
 test('pas d erreur au blur si le champ est valide', () => {
-  render(<App />);
+  renderApp();
 
   const prenomInput = screen.getByLabelText('Prénom');
   fireEvent.change(prenomInput, { target: { value: 'Jean', name: 'firstName' } });
@@ -236,7 +220,7 @@ test('pas d erreur au blur si le champ est valide', () => {
 });
 
 test('pas d erreur au blur si nom valide', () => {
-  render(<App />);
+  renderApp();
 
   const nomInput = screen.getByLabelText('Nom');
   fireEvent.change(nomInput, { target: { value: 'Dupont', name: 'lastName' } });
@@ -245,9 +229,8 @@ test('pas d erreur au blur si nom valide', () => {
   expect(screen.queryByText('Ce champ est requis')).not.toBeInTheDocument();
 });
 
-// test soumission avec email invalide pour couvrir cette branche
 test('erreur a la soumission si email invalide', () => {
-  render(<App />);
+  renderApp();
 
   fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Jean', name: 'firstName' } });
   fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Dupont', name: 'lastName' } });
@@ -256,15 +239,13 @@ test('erreur a la soumission si email invalide', () => {
   fireEvent.change(screen.getByLabelText('Ville'), { target: { value: 'Paris', name: 'city' } });
   fireEvent.change(screen.getByLabelText('Code postal'), { target: { value: '75001', name: 'postalCode' } });
 
-  // le bouton est disabled car email invalide, on force le submit
   fireEvent.submit(screen.getByRole('button', { name: "S'inscrire" }));
 
   expect(screen.getByText("L'email n'est pas valide")).toBeInTheDocument();
 });
 
-// test soumission avec nom invalide
 test('erreur a la soumission si nom contient des chiffres', () => {
-  render(<App />);
+  renderApp();
 
   fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Jean', name: 'firstName' } });
   fireEvent.change(screen.getByLabelText('Nom'), { target: { value: '123', name: 'lastName' } });
@@ -278,9 +259,8 @@ test('erreur a la soumission si nom contient des chiffres', () => {
   expect(screen.getByText('Le nom ne doit contenir que des lettres')).toBeInTheDocument();
 });
 
-// test soumission avec ville invalide
 test('erreur a la soumission si ville invalide', () => {
-  render(<App />);
+  renderApp();
 
   fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Jean', name: 'firstName' } });
   fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Dupont', name: 'lastName' } });
@@ -294,9 +274,8 @@ test('erreur a la soumission si ville invalide', () => {
   expect(screen.getByText('Nom de ville invalide')).toBeInTheDocument();
 });
 
-// test soumission avec code postal invalide
 test('erreur a la soumission si code postal invalide', () => {
-  render(<App />);
+  renderApp();
 
   fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Jean', name: 'firstName' } });
   fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Dupont', name: 'lastName' } });
@@ -310,9 +289,8 @@ test('erreur a la soumission si code postal invalide', () => {
   expect(screen.getByText('Le code postal doit contenir 5 chiffres')).toBeInTheDocument();
 });
 
-// test soumission avec prenom invalide
 test('erreur a la soumission si prenom invalide', () => {
-  render(<App />);
+  renderApp();
 
   fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: '123', name: 'firstName' } });
   fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Dupont', name: 'lastName' } });
@@ -327,14 +305,13 @@ test('erreur a la soumission si prenom invalide', () => {
 });
 
 test('l erreur disparait quand on corrige le champ', () => {
-  render(<App />);
+  renderApp();
 
   const prenomInput = screen.getByLabelText('Prénom');
   fireEvent.focus(prenomInput);
   fireEvent.blur(prenomInput);
   expect(screen.getByText('Ce champ est requis')).toBeInTheDocument();
 
-  // on tape quelque chose
   fireEvent.change(prenomInput, { target: { value: 'Jean', name: 'firstName' } });
   expect(screen.queryByText('Ce champ est requis')).not.toBeInTheDocument();
 });

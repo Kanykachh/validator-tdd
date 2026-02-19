@@ -1,8 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { validateAge, validatePostalCode, validateName, validateEmail, validateCity, validateForm } from './validator';
+import { useUsers } from './UserContext';
 import './App.css';
 
 function App() {
+  const navigate = useNavigate();
+  const { addUser } = useUsers();
+
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -15,16 +20,13 @@ function App() {
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
 
-  // met a jour le champ qui change
   const handleChange = (e) => {
     const newForm = { ...form, [e.target.name]: e.target.value };
     setForm(newForm);
-    // on enleve l'erreur du champ quand l'user tape
     setErrors({ ...errors, [e.target.name]: '' });
     setSuccess(false);
   };
 
-  // validation quand on quitte un champ (blur)
   const validators = {
     firstName: validateName,
     lastName: validateName,
@@ -45,15 +47,11 @@ function App() {
     }
   };
 
-  // verifie si le formulaire est valide pour activer le bouton
   const isFormValid = () => {
-    // si un champ est vide c'est pas bon
     if (Object.values(form).some(val => val.trim() === '')) return false;
-    // on verifie tout avec validateForm
     return validateForm(form);
   };
 
-  // validation et sauvegarde
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -77,18 +75,17 @@ function App() {
     const postalCheck = validatePostalCode(form.postalCode);
     if (!postalCheck.valid) newErrors.postalCode = postalCheck.error;
 
-    // si y'a des erreurs on les affiche et on arrete
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       setSuccess(false);
       return;
     }
 
-    // tout est bon, on sauvegarde dans le localStorage
+    addUser(form);
     localStorage.setItem('userData', JSON.stringify(form));
+
     setSuccess(true);
     setErrors({});
-    // on vide le formulaire
     setForm({
       firstName: '',
       lastName: '',
@@ -109,11 +106,12 @@ function App() {
             type="text"
             id="firstName"
             name="firstName"
+            data-cy="firstName"
             value={form.firstName}
             onChange={handleChange}
             onBlur={handleBlur}
           />
-          {errors.firstName && <div className="error">{errors.firstName}</div>}
+          {errors.firstName && <div className="error" data-cy="error-firstName">{errors.firstName}</div>}
         </div>
 
         <div className="form-group">
@@ -122,11 +120,12 @@ function App() {
             type="text"
             id="lastName"
             name="lastName"
+            data-cy="lastName"
             value={form.lastName}
             onChange={handleChange}
             onBlur={handleBlur}
           />
-          {errors.lastName && <div className="error">{errors.lastName}</div>}
+          {errors.lastName && <div className="error" data-cy="error-lastName">{errors.lastName}</div>}
         </div>
 
         <div className="form-group">
@@ -135,11 +134,12 @@ function App() {
             type="text"
             id="email"
             name="email"
+            data-cy="email"
             value={form.email}
             onChange={handleChange}
             onBlur={handleBlur}
           />
-          {errors.email && <div className="error">{errors.email}</div>}
+          {errors.email && <div className="error" data-cy="error-email">{errors.email}</div>}
         </div>
 
         <div className="form-group">
@@ -148,11 +148,12 @@ function App() {
             type="date"
             id="birthDate"
             name="birthDate"
+            data-cy="birthDate"
             value={form.birthDate}
             onChange={handleChange}
             onBlur={handleBlur}
           />
-          {errors.birthDate && <div className="error">{errors.birthDate}</div>}
+          {errors.birthDate && <div className="error" data-cy="error-birthDate">{errors.birthDate}</div>}
         </div>
 
         <div className="form-group">
@@ -161,11 +162,12 @@ function App() {
             type="text"
             id="city"
             name="city"
+            data-cy="city"
             value={form.city}
             onChange={handleChange}
             onBlur={handleBlur}
           />
-          {errors.city && <div className="error">{errors.city}</div>}
+          {errors.city && <div className="error" data-cy="error-city">{errors.city}</div>}
         </div>
 
         <div className="form-group">
@@ -174,17 +176,24 @@ function App() {
             type="text"
             id="postalCode"
             name="postalCode"
+            data-cy="postalCode"
             value={form.postalCode}
             onChange={handleChange}
             onBlur={handleBlur}
           />
-          {errors.postalCode && <div className="error">{errors.postalCode}</div>}
+          {errors.postalCode && <div className="error" data-cy="error-postalCode">{errors.postalCode}</div>}
         </div>
 
-        <button type="submit" disabled={!isFormValid()}>S'inscrire</button>
+        <button type="submit" data-cy="submit" disabled={!isFormValid()}>S'inscrire</button>
       </form>
 
-      {success && <div className="success" role="alert">Inscription enregistrée !</div>}
+      {success && (
+        <div className="success" role="alert" data-cy="success">
+          Inscription enregistrée !
+          <br />
+          <button onClick={() => navigate('/')} data-cy="link-home">Retour à l'accueil</button>
+        </div>
+      )}
     </div>
   );
 }

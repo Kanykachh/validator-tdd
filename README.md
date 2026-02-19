@@ -31,3 +31,31 @@ cd my-app
 npm install
 npm start
 ```
+
+### Pages
+
+- `/` : Page d'accueil avec compteur et liste des utilisateurs inscrits
+- `/register` : Formulaire d'inscription
+
+### Tests E2E (Cypress)
+
+Lancer l'application puis Cypress :
+
+```bash
+cd my-app
+npm start
+```
+
+Dans un autre terminal :
+
+```bash
+cd my-app
+npm run cypress
+```
+
+Ou en mode headless :
+
+```bash
+cd my-app
+npm run cypress:run
+```
