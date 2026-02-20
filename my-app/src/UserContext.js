@@ -1,23 +1,42 @@
-import { createContext, useState, useContext, useEffect } from 'react';
+import { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { fetchUsers, createUser } from './api/userService';
 
 const UserContext = createContext();
 
 export function UserProvider({ children }) {
-  const [users, setUsers] = useState(() => {
-    const saved = localStorage.getItem('users');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const loadUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await fetchUsers();
+      setUsers(data);
+    } catch (err) {
+      setError('Impossible de charger les utilisateurs');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem('users', JSON.stringify(users));
-  }, [users]);
+    loadUsers();
+  }, [loadUsers]);
 
-  const addUser = (user) => {
-    setUsers((prev) => [...prev, user]);
+  const addUser = async (user) => {
+    try {
+      const created = await createUser(user);
+      setUsers((prev) => [...prev, { ...user, id: created.id }]);
+      return { success: true };
+    } catch (err) {
+      setError('Erreur lors de l\'inscription');
+      return { success: false, error: 'Erreur réseau, réessayez plus tard' };
+    }
   };
 
   return (
-    <UserContext.Provider value={{ users, addUser }}>
+    <UserContext.Provider value={{ users, addUser, loading, error }}>
       {children}
     </UserContext.Provider>
   );

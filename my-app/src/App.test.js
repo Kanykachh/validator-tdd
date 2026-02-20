@@ -1,7 +1,10 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { UserProvider } from './UserContext';
 import App from './App';
+import { fetchUsers, createUser } from './api/userService';
+
+jest.mock('./api/userService');
 
 function renderApp() {
   return render(
@@ -14,7 +17,8 @@ function renderApp() {
 }
 
 beforeEach(() => {
-  localStorage.clear();
+  fetchUsers.mockResolvedValue([]);
+  createUser.mockResolvedValue({ id: 11 });
 });
 
 function remplirFormulaire() {
@@ -139,29 +143,24 @@ test('affiche les erreurs si on essaye de soumettre avec des champs invalides', 
   expect(screen.queryByText('Inscription enregistrée !')).not.toBeInTheDocument();
 });
 
-test('inscription reussie: toaster + localStorage + champs vides', () => {
+test('inscription reussie: toaster + champs vides', async () => {
   renderApp();
   remplirFormulaire();
 
   fireEvent.click(screen.getByRole('button', { name: "S'inscrire" }));
 
-  const toaster = screen.getByRole('alert');
-  expect(toaster).toHaveTextContent('Inscription enregistrée !');
-  expect(toaster).toHaveClass('success');
-
-  const saved = JSON.parse(localStorage.getItem('userData'));
-  expect(saved.firstName).toBe('Kany');
-  expect(saved.lastName).toBe('Chheng');
-  expect(saved.email).toBe('kany@test.com');
-  expect(saved.postalCode).toBe('75015');
-  expect(saved.city).toBe('Paris');
+  await waitFor(() => {
+    const toaster = screen.getByRole('alert');
+    expect(toaster).toHaveTextContent('Inscription enregistrée !');
+    expect(toaster).toHaveClass('success');
+  });
 
   expect(screen.getByLabelText('Prénom').value).toBe('');
   expect(screen.getByLabelText('Nom').value).toBe('');
   expect(screen.getByLabelText('Email').value).toBe('');
 });
 
-test('utilisateur chaotique: saisies invalides, corrections, re-saisies', () => {
+test('utilisateur chaotique: saisies invalides, corrections, re-saisies', async () => {
   renderApp();
 
   const prenomInput = screen.getByLabelText('Prénom');
@@ -189,19 +188,21 @@ test('utilisateur chaotique: saisies invalides, corrections, re-saisies', () => 
   expect(button).not.toBeDisabled();
 
   fireEvent.click(button);
-  expect(screen.getByText('Inscription enregistrée !')).toBeInTheDocument();
 
-  const saved = JSON.parse(localStorage.getItem('userData'));
-  expect(saved.firstName).toBe('Jean');
-  expect(saved.city).toBe('Lyon');
+  await waitFor(() => {
+    expect(screen.getByText('Inscription enregistrée !')).toBeInTheDocument();
+  });
 });
 
-test('le toaster disparait si on modifie un champ apres', () => {
+test('le toaster disparait si on modifie un champ apres', async () => {
   renderApp();
   remplirFormulaire();
 
   fireEvent.click(screen.getByRole('button', { name: "S'inscrire" }));
-  expect(screen.getByText('Inscription enregistrée !')).toBeInTheDocument();
+
+  await waitFor(() => {
+    expect(screen.getByText('Inscription enregistrée !')).toBeInTheDocument();
+  });
 
   fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Marie', name: 'firstName' } });
 

@@ -52,7 +52,7 @@ function App() {
     return validateForm(form);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const newErrors = {};
@@ -81,19 +81,23 @@ function App() {
       return;
     }
 
-    addUser(form);
-    localStorage.setItem('userData', JSON.stringify(form));
+    const result = await addUser(form);
 
-    setSuccess(true);
-    setErrors({});
-    setForm({
-      firstName: '',
-      lastName: '',
-      email: '',
-      birthDate: '',
-      city: '',
-      postalCode: ''
-    });
+    if (result.success) {
+      setSuccess(true);
+      setErrors({});
+      setForm({
+        firstName: '',
+        lastName: '',
+        email: '',
+        birthDate: '',
+        city: '',
+        postalCode: ''
+      });
+    } else {
+      setErrors({ api: result.error });
+      setSuccess(false);
+    }
   };
 
   return (
@@ -184,6 +188,7 @@ function App() {
           {errors.postalCode && <div className="error" data-cy="error-postalCode">{errors.postalCode}</div>}
         </div>
 
+        {errors.api && <div className="error" data-cy="error-api">{errors.api}</div>}
         <button type="submit" data-cy="submit" disabled={!isFormValid()}>S'inscrire</button>
       </form>
 
