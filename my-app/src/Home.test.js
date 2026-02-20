@@ -67,3 +67,48 @@ test('affiche le lien vers le formulaire d inscription', async () => {
     expect(screen.getByText("S'inscrire")).toBeInTheDocument();
   });
 });
+
+test('affiche une erreur quand le serveur renvoie une 500', async () => {
+  const error500 = new Error('Internal Server Error');
+  error500.response = { status: 500, data: {} };
+  fetchUsers.mockRejectedValueOnce(error500);
+
+  renderHome();
+
+  await waitFor(() => {
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Le serveur est indisponible, réessayez plus tard'
+    );
+  });
+
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+});
+
+test('affiche une erreur quand le reseau est down', async () => {
+  fetchUsers.mockRejectedValueOnce(new Error('Network Error'));
+
+  renderHome();
+
+  await waitFor(() => {
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Impossible de charger les utilisateurs'
+    );
+  });
+});
+
+test('affiche le chargement avant la reponse API', async () => {
+  let resolvePromise;
+  fetchUsers.mockImplementation(() => new Promise((resolve) => {
+    resolvePromise = resolve;
+  }));
+
+  renderHome();
+
+  expect(screen.getByText('Chargement...')).toBeInTheDocument();
+
+  resolvePromise([]);
+
+  await waitFor(() => {
+    expect(screen.queryByText('Chargement...')).not.toBeInTheDocument();
+  });
+});

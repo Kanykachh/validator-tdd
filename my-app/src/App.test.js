@@ -316,3 +316,50 @@ test('l erreur disparait quand on corrige le champ', () => {
   fireEvent.change(prenomInput, { target: { value: 'Jean', name: 'firstName' } });
   expect(screen.queryByText('Ce champ est requis')).not.toBeInTheDocument();
 });
+
+test('affiche l erreur 400 quand l email existe deja', async () => {
+  const error400 = new Error('Bad Request');
+  error400.response = {
+    status: 400,
+    data: { message: 'Cet email est déjà utilisé' }
+  };
+  createUser.mockRejectedValueOnce(error400);
+
+  renderApp();
+  remplirFormulaire();
+
+  fireEvent.click(screen.getByRole('button', { name: "S'inscrire" }));
+
+  await waitFor(() => {
+    expect(screen.getByText('Cet email est déjà utilisé')).toBeInTheDocument();
+  });
+
+  expect(screen.queryByText('Inscription enregistrée !')).not.toBeInTheDocument();
+  expect(createUser).toHaveBeenCalledTimes(1);
+  expect(createUser).toHaveBeenCalledWith({
+    firstName: 'Kany',
+    lastName: 'Chheng',
+    email: 'kany@test.com',
+    birthDate: '1998-03-22',
+    city: 'Paris',
+    postalCode: '75015'
+  });
+});
+
+test('affiche l erreur 500 quand le serveur est down', async () => {
+  const error500 = new Error('Internal Server Error');
+  error500.response = { status: 500, data: {} };
+  createUser.mockRejectedValueOnce(error500);
+
+  renderApp();
+  remplirFormulaire();
+
+  fireEvent.click(screen.getByRole('button', { name: "S'inscrire" }));
+
+  await waitFor(() => {
+    expect(screen.getByText('Le serveur est indisponible, réessayez plus tard')).toBeInTheDocument();
+  });
+
+  expect(screen.queryByText('Inscription enregistrée !')).not.toBeInTheDocument();
+  expect(createUser).toHaveBeenCalledTimes(1);
+});
