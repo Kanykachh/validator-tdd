@@ -11,10 +11,16 @@ export function UserProvider({ children }) {
   const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await fetchUsers();
       setUsers(data);
     } catch (err) {
-      setError('Impossible de charger les utilisateurs');
+      const status = err.response?.status;
+      if (status === 500) {
+        setError('Le serveur est indisponible, réessayez plus tard');
+      } else {
+        setError('Impossible de charger les utilisateurs');
+      }
     } finally {
       setLoading(false);
     }
@@ -30,7 +36,15 @@ export function UserProvider({ children }) {
       setUsers((prev) => [...prev, { ...user, id: created.id }]);
       return { success: true };
     } catch (err) {
-      setError('Erreur lors de l\'inscription');
+      const status = err.response?.status;
+      const backendMsg = err.response?.data?.message;
+
+      if (status === 400) {
+        return { success: false, error: backendMsg || 'Données invalides' };
+      }
+      if (status === 500) {
+        return { success: false, error: 'Le serveur est indisponible, réessayez plus tard' };
+      }
       return { success: false, error: 'Erreur réseau, réessayez plus tard' };
     }
   };
