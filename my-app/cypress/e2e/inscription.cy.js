@@ -1,7 +1,12 @@
+const API_URL = 'https://jsonplaceholder.typicode.com';
+
 describe('Formulaire d\'inscription', () => {
 
   beforeEach(() => {
+    cy.intercept('GET', `${API_URL}/users`, []).as('getUsers')
+    cy.intercept('POST', `${API_URL}/users`, { id: 11 }).as('createUser')
     cy.visit('/register')
+    cy.wait('@getUsers')
   })
 
   it('affiche le formulaire avec tous les champs', () => {
@@ -55,6 +60,7 @@ describe('Formulaire d\'inscription', () => {
     cy.get('[data-cy=submit]').should('not.be.disabled')
     cy.get('[data-cy=submit]').click()
 
+    cy.wait('@createUser')
     cy.get('[data-cy=success]').should('contain', 'Inscription enregistrée')
 
     cy.get('[data-cy=firstName]').should('have.value', '')
@@ -72,6 +78,7 @@ describe('Formulaire d\'inscription', () => {
       cy.get('[data-cy=postalCode]').type(user.postalCode)
 
       cy.get('[data-cy=submit]').click()
+      cy.wait('@createUser')
       cy.get('[data-cy=success]').should('be.visible')
     })
   })
@@ -93,6 +100,7 @@ describe('Formulaire d\'inscription', () => {
     cy.get('[data-cy=postalCode]').type('75015')
 
     cy.get('[data-cy=submit]').click()
+    cy.wait('@createUser')
     cy.get('[data-cy=success]').should('exist')
 
     cy.get('[data-cy=firstName]').type('Marie')
