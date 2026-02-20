@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 describe('fetchUsers', () => {
-  it('recupere la liste des utilisateurs', async () => {
+  it('recupere la liste des utilisateurs (200)', async () => {
     const fakeUsers = [
       { id: 1, firstName: 'Kany', lastName: 'Chheng' },
       { id: 2, firstName: 'Jean', lastName: 'Dupont' }
@@ -24,7 +24,16 @@ describe('fetchUsers', () => {
     expect(result).toHaveLength(2);
   });
 
-  it('renvoie une erreur en cas de probleme reseau', async () => {
+  it('rejette en cas d erreur serveur 500', async () => {
+    const error = new Error('Internal Server Error');
+    error.response = { status: 500, data: {} };
+    axios.get.mockRejectedValueOnce(error);
+
+    await expect(fetchUsers()).rejects.toThrow('Internal Server Error');
+    expect(axios.get).toHaveBeenCalledWith('https://jsonplaceholder.typicode.com/users');
+  });
+
+  it('rejette en cas d erreur reseau', async () => {
     axios.get.mockRejectedValueOnce(new Error('Network Error'));
 
     await expect(fetchUsers()).rejects.toThrow('Network Error');
@@ -33,13 +42,13 @@ describe('fetchUsers', () => {
 });
 
 describe('createUser', () => {
-  it('cree un utilisateur et renvoie la reponse', async () => {
-    const newUser = {
-      firstName: 'Kany',
-      lastName: 'Chheng',
-      email: 'kany@test.com'
-    };
+  const newUser = {
+    firstName: 'Kany',
+    lastName: 'Chheng',
+    email: 'kany@test.com'
+  };
 
+  it('cree un utilisateur avec succes (201)', async () => {
     axios.post.mockResolvedValueOnce({ data: { id: 11, ...newUser } });
 
     const result = await createUser(newUser);
@@ -53,13 +62,30 @@ describe('createUser', () => {
     expect(result.firstName).toBe('Kany');
   });
 
-  it('renvoie une erreur si le serveur est down', async () => {
-    axios.post.mockRejectedValueOnce(new Error('Network Error'));
+  it('rejette avec 400 si email deja utilise', async () => {
+    const error = new Error('Bad Request');
+    error.response = {
+      status: 400,
+      data: { message: 'Cet email est déjà utilisé' }
+    };
+    axios.post.mockRejectedValueOnce(error);
 
-    await expect(createUser({ firstName: 'Test' })).rejects.toThrow('Network Error');
+    await expect(createUser(newUser)).rejects.toThrow('Bad Request');
     expect(axios.post).toHaveBeenCalledWith(
       'https://jsonplaceholder.typicode.com/users',
-      { firstName: 'Test' }
+      newUser
+    );
+  });
+
+  it('rejette avec 500 si le serveur est down', async () => {
+    const error = new Error('Internal Server Error');
+    error.response = { status: 500, data: {} };
+    axios.post.mockRejectedValueOnce(error);
+
+    await expect(createUser(newUser)).rejects.toThrow('Internal Server Error');
+    expect(axios.post).toHaveBeenCalledWith(
+      'https://jsonplaceholder.typicode.com/users',
+      newUser
     );
   });
 });
